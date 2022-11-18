@@ -11,7 +11,7 @@ from fitting.helpers import create_sin_target
 from utils.image_helpers import load_image
 from utils.segmentation import segment, average_channel_gradients, assure_act_map_validity
 
-GPU = False
+GPU = True
 if GPU:
     assert torch.cuda.is_available()
     torch.backends.cudnn.enabled = True
@@ -29,7 +29,9 @@ def generate_superpixels(image_path, cluster_nums):
 
     # Load Config
     fit_configuration = FittingConfiguration(sample_target_image)
+    print(f'+++ Fitting Configuration +++')
     print(fit_configuration)
+    print()
 
     # Init Decoders, Fitters and Target Images
     decoders = [create_model_from_configuration(fit_configuration) for _ in range(fit_configuration.number_of_runs)]
@@ -76,5 +78,5 @@ def generate_superpixels(image_path, cluster_nums):
 
 if __name__ == '__main__':
     cluster_nums = [20, 100, 400]
-    image_path = '103070.jpg'
+    image_path = '65033.jpg'
     generate_superpixels(image_path, cluster_nums)

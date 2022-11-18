@@ -17,7 +17,7 @@ def image_to_tensor(image):
 
 
 def load_image(image_path):
-    original_image = skimage.io.imread(image_path)[:20, :20]
+    original_image = skimage.io.imread(image_path)
     original_image = original_image.astype(float) / 255
     if len(original_image.shape) == 2:
         original_image = original_image[:, :, None]

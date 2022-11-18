@@ -23,7 +23,8 @@ class FittingConfiguration:
         self.save_losses = False
         self.constant_input = True
         self.compactness_parameter = 0.9
-        self.input_blur = int(target_image[:, :, 0].size * 0.0001 // 2 * 2 + 1)
+        blur_factor = 0.0001
+        self.input_blur = int(target_image[:, :, 0].size * blur_factor // 2 * 2 + 1)
         self.lr_schedule_factor = 0.8
 
         if torch.cuda.is_available():
