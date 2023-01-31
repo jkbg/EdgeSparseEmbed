@@ -37,6 +37,8 @@ class SLIC:
         self.distance = np.full((self.X, self.Y), np.inf)
 
     def init_regions(self):
+        """ Initialize clusters based on an evenly spaced grid and the min value in the average channel gradient in
+        5x5 neighbourhood around these evenly spaced points """
         ny = int(np.sqrt(self.number_of_regions * self.Y / self.X))
         nx = self.number_of_regions // ny
         ys = np.mean((np.linspace(0, self.Y, ny + 1)[1:], np.linspace(0, self.Y, ny + 1)[:-1]), axis=0).astype(int)
@@ -55,6 +57,12 @@ class SLIC:
         self.region_features = np.zeros((self.number_of_regions, self.pixel_features.shape[2]))
 
     def assign_regions(self):
+        """ Assignment step:
+        For each cluster:
+            Find neighbourhood
+            Calculate distance feature distance to neighbouring pixels
+            If distance smaller than smallest distance from previous clusters assign label to pixel
+        """
         for region_label in range(self.number_of_regions):
             region_feature = self.region_features[region_label]
             region = self.labels == region_label
@@ -71,6 +79,7 @@ class SLIC:
                 self.distance[neighbourhood] = new_neighbourhood_distance
 
     def update_regions(self):
+        """ Update mean feature of each cluster """
         self.distance = np.full((self.X, self.Y), np.inf)
         for region_label in range(self.number_of_regions):
             self.region_features[region_label] = np.mean(self.pixel_features[self.labels == region_label], axis=0)
@@ -79,6 +88,8 @@ class SLIC:
             self.distance[region] = np.sum((self.pixel_features[region] - region_feature) ** 2, axis=1)
 
     def assert_connectivity(self):
+        """ Perform a connected component analysis, set all pixels not belonging to the biggest shape to -1 (undefined)
+        For each -1 shape assign it the label of a random neighbouring cluster."""
         for region_label in range(self.number_of_regions):
             shape_labels, shape_num = measure.label(self.labels == region_label, return_num=True, connectivity=1)
             if shape_num > 1:
@@ -104,18 +115,25 @@ class SLIC:
             self.labels[shape] = np.random.choice(neighbours)
 
     def iterate(self, num_iter):
+        """ Main Iteration Loop It first initializes the regions with self.init_regions() and then iteratively
+        applies self.update_regions(), self.assign_regions(), self.assert_connectivity() """
         if np.all(self.labels == -1):
             self.init_regions()
         self.old_labels = self.labels.copy()
         for step in range(num_iter):
             print(step, end='\r')
+
             self.update_regions()
             self.assign_regions()
             self.assert_connectivity()
+
+            # Show intermediate result
             if self.original_image is not None and (step % self.log_freq == 0):
                 print()
                 print(f'Number of changed labels {np.sum(self.old_labels != self.labels)}')
                 self.log()
+
+            # Convergence Check
             if np.sum(self.old_labels != self.labels) <= self.convergence_factor * self.labels.size:
                 print(f'Converged at step {step}.')
                 break
@@ -124,14 +142,8 @@ class SLIC:
             self.log()
         return self.labels
 
-    def refine_segmentation(self, segmentation, num_iter):
-        self.labels = segmentation.copy()
-        self.number_of_regions = len(np.unique(segmentation))
-        self.region_features = np.zeros((self.number_of_regions, self.pixel_features.shape[2]))
-        self.update_regions()
-        return self.iterate(num_iter)
-
     def log(self):
+        """ Mark boundaries on original image and plot image."""
         display = mark_boundaries(self.original_image, self.labels, outline_color=None, mode='outer',
                                   background_label=0)
         plt.imshow(display, cmap='nipy_spectral')

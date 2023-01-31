@@ -3,11 +3,20 @@ import cv2
 import skimage
 
 
-def generate_random_variants(number_of_hidden_channels, input_size, blur=0):
-    input_images = []
-    gen_counter = 0
+def generate_random_input(number_of_hidden_channels, input_size, blur=0):
+    """
+    Generates random uniform noise
+    Blurs noise with a Gaussian Kernel of standard deviation blur (no blurring if blur=0)
+    Normalizes on interval [-1,1]
 
-    while len(input_images) < number_of_hidden_channels and gen_counter < number_of_hidden_channels * 5:
+    :param number_of_hidden_channels: int
+    :param input_size: [width, height]
+    :param blur: Standard Deviation of Gaussian kernel used to blur noise
+    :return:
+    """
+    input_images = []
+
+    for _ in range(number_of_hidden_channels):
         noise = np.random.uniform(low=-1, high=1, size=[*input_size])
         if blur == 0:
             convolution = noise
@@ -16,20 +25,17 @@ def generate_random_variants(number_of_hidden_channels, input_size, blur=0):
             convolution = convolution - np.min(convolution)
             convolution = convolution / np.max(convolution)
             convolution = 2 * convolution - 1
-
         input_images.append(convolution)
-
-        gen_counter += 1
-    for _ in range(number_of_hidden_channels - len(input_images)):
-        input_images.append(np.zeros([input_size] * 2))
     return input_images
 
 
 def create_sin_target(original_image):
+    """ Creates target image from original RGB-image.
+    First 24 images of target image are positionally encoded brightness.
+    Last 3 are original RGB images.
+    """
     clab_img = skimage.color.rgb2lab(original_image)
     clab_img[:, :, 0] = clab_img[:, :, 0] / 100
-    clab_img[:, :, 1] = (clab_img[:, :, 1] + 128) / 255
-    clab_img[:, :, 2] = (clab_img[:, :, 2] + 128) / 255
 
     target_image = np.zeros((original_image.shape[0], original_image.shape[1], 0))
     xs = np.arange(original_image.shape[0])

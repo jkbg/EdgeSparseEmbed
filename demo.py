@@ -11,7 +11,9 @@ from fitting.helpers import create_sin_target
 from utils.image_helpers import load_image
 from utils.segmentation import segment, average_channel_gradients, assure_act_map_validity
 
-GPU = True
+
+# Backend Configuration
+GPU = False
 if GPU:
     assert torch.cuda.is_available()
     torch.backends.cudnn.enabled = True
@@ -24,37 +26,45 @@ else:
 
 
 def generate_superpixels(image_path, cluster_nums):
+    """
+    Parent function to generate superpixels.
+    :param image_path: Path to image that gets superpixelized
+    :param cluster_nums: List of cluster parameters, i.e. number of desired superpixels
+    :return: None, images get saved as files
+    """
     # Load Image
-    original_image, sample_target_image = load_image(image_path)
+    original_image = load_image(image_path)
 
-    # Load Config
+    # Setup Config with a sample positionally encoded target image (to set target image dimensions)
+    sample_target_image = create_sin_target(original_image)
     fit_configuration = FittingConfiguration(sample_target_image)
     print(f'+++ Fitting Configuration +++')
     print(fit_configuration)
     print()
 
     # Init Decoders, Fitters and Target Images
-    decoders = [create_model_from_configuration(fit_configuration) for _ in range(fit_configuration.number_of_runs)]
-    fitters = [create_fitter_from_configuration(fit_configuration) for _ in range(fit_configuration.number_of_runs)]
-    target_images = [create_sin_target(original_image) for _ in range(fit_configuration.number_of_runs)]
+    decoders = [create_model_from_configuration(fit_configuration) for _ in range(fit_configuration.number_of_decoders)]
+    fitters = [create_fitter_from_configuration(fit_configuration) for _ in range(fit_configuration.number_of_decoders)]
+    target_images = [create_sin_target(original_image) for _ in range(fit_configuration.number_of_decoders)]
 
     # Fit Decoders and extract activation maps
+
     last_layers = []
     for run_index, (decoder, fitter, target_image) in enumerate(zip(decoders, fitters, target_images)):
         # Fit
-        fitter(decoder, target_image, target_image, log_prefix=f'Run {run_index + 1}: ')
+        fitter(decoder, target_image, log_prefix=f'Run {run_index + 1}: ')
         decoder = fitter.best_model
-        decoder.eval()
 
         # Extract Activation Maps
-        activation = {}
 
+        # Generate Hook that saves the ouput of a module in the dictionary "activation"
+        activation = {}
         def get_activation(name):
             def hook(model, input, output):
                 activation[name] = output.detach()
-
             return hook
 
+        # Register hook in last hidden layer, run decoder once and then save activation maps
         decoder.module_list[-3].register_forward_hook(get_activation('conv-1'))
         _ = decoder(fitter.fixed_net_input)
         last_layers.append(list(activation['conv-1'].squeeze().cpu().numpy()))

@@ -15,14 +15,13 @@ class FittingConfiguration:
 
         # Fitting Parameters
         self.number_of_iterations = 1500
-        self.number_of_runs = 3
+        self.number_of_decoders = 3
         self.learning_rate = 0.1
         self.convergence_check_length = None
         self.log_frequency = 100
         self.find_best = True
         self.save_losses = False
-        self.constant_input = True
-        self.compactness_parameter = 0.9
+        self.compactness_parameter = 0.1
         blur_factor = 0.0001
         self.input_blur = int(target_image[:, :, 0].size * blur_factor // 2 * 2 + 1)
         self.lr_schedule_factor = 0.8

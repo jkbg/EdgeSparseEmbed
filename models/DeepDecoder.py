@@ -32,7 +32,6 @@ class DeepDecoder(nn.Module):
                 self.module_list.append(DeepModule(number_of_hidden_channels, number_of_hidden_channels, upsample_size))
                 self.module_list.append(nn.Dropout(p=0.5))
 
-        # self.module_list.append(nn.Dropout(p=0.2))
         # Add final module
         self.module_list.append(nn.Conv2d(in_channels=number_of_hidden_channels,
                                           out_channels=self.number_of_output_channels,
