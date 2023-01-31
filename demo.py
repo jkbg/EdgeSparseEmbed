@@ -88,5 +88,5 @@ def generate_superpixels(image_path, cluster_nums):
 
 if __name__ == '__main__':
     cluster_nums = [20, 100, 400]
-    image_path = '65033.jpg'
+    image_path = 'breakfast.png'
     generate_superpixels(image_path, cluster_nums)
