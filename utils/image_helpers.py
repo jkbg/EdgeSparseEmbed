@@ -3,7 +3,7 @@ import torch
 import skimage
 import skimage.measure
 
-from fitting.helpers import create_sin_target
+from skimage.segmentation import mark_boundaries
 
 
 def tensor_to_image(tensor):
@@ -25,3 +25,13 @@ def load_image(image_path):
     if len(original_image.shape) == 2:
         original_image = original_image[:, :, None]
     return original_image
+
+
+def save_boundary_image(cluster_num, original_image, segmentation):
+    if original_image.shape[2] == 1:
+        original_image = skimage.color.gray2rgb(original_image[:, :, 0])
+    display = mark_boundaries(original_image, segmentation, color=[1, 1, 0], outline_color=[1, 0, 0],
+                              mode='subpixel')
+    display = 255 * display
+    display = display.astype(np.uint8)
+    skimage.io.imsave(f'{cluster_num}_superpixels.png', display)

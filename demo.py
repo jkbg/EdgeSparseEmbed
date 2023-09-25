@@ -1,15 +1,11 @@
 import os
 import torch
-import skimage
-import numpy as np
-
-from skimage.segmentation import mark_boundaries
 
 from FittingConfiguration import FittingConfiguration
 from models.DeepDecoder import create_model_from_configuration
 from fitting.Fitter import create_fitter_from_configuration
 from fitting.helpers import create_sin_target
-from utils.image_helpers import load_image
+from utils.image_helpers import load_image, save_boundary_image
 from utils.segmentation import segment, average_channel_gradients, assure_act_map_validity
 
 
@@ -81,11 +77,7 @@ def generate_superpixels(image_path, cluster_nums):
     for cluster_num in cluster_nums:
         print(f'+++ SLIC - {cluster_num} Clusters +++' + ' ' * 20)
         segmentation = segment(selected_act_maps, cluster_num, channel_gradient)
-        display = mark_boundaries(original_image, segmentation, color=[1, 1, 0], outline_color=[1, 0, 0],
-                                  mode='subpixel')
-        display = 255 * display
-        display = display.astype(np.uint8)
-        skimage.io.imsave(f'{cluster_num}_superpixels.jpg', display)
+        save_boundary_image(cluster_num, original_image, segmentation)
         print()
 
 
