@@ -88,9 +88,9 @@ class Fitter:
                 self.optimizer.zero_grad()
                 output = self.model(self.fixed_net_input)
                 # Calculate loss wrt RGB
-                loss = (1-self.compactness_parameter) * self.loss_function(self.target_image[-3:, :, :], output[-3:, :, :])
+                loss = (1-self.compactness_parameter) * self.loss_function(self.target_image[24:, :, :], output[24:, :, :])
                 # Calculate loss wrt positional encoding
-                loss += self.compactness_parameter * self.loss_function(self.target_image[:-3, :, :], output[:-3, :, :])
+                loss += self.compactness_parameter * self.loss_function(self.target_image[:24, :, :], output[:24, :, :])
                 loss.backward()
                 self.update_loss_metrics_and_best_model(loss)
                 self.scheduler.step()

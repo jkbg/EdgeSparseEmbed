@@ -1,6 +1,7 @@
 import os
 import torch
 import skimage
+import numpy as np
 
 from skimage.segmentation import mark_boundaries
 
@@ -82,11 +83,13 @@ def generate_superpixels(image_path, cluster_nums):
         segmentation = segment(selected_act_maps, cluster_num, channel_gradient)
         display = mark_boundaries(original_image, segmentation, color=[1, 1, 0], outline_color=[1, 0, 0],
                                   mode='subpixel')
+        display = 255 * display
+        display = display.astype(np.uint8)
         skimage.io.imsave(f'{cluster_num}_superpixels.jpg', display)
         print()
 
 
 if __name__ == '__main__':
     cluster_nums = [20, 100, 400]
-    image_path = 'breakfast.png'
+    image_path = 'canonical_mri.png'  #'breakfast.png'
     generate_superpixels(image_path, cluster_nums)

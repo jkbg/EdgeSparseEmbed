@@ -34,8 +34,11 @@ def create_sin_target(original_image):
     First 24 images of target image are positionally encoded brightness.
     Last 3 are original RGB images.
     """
-    clab_img = skimage.color.rgb2lab(original_image)
-    clab_img[:, :, 0] = clab_img[:, :, 0] / 100
+    if original_image.shape[2] == 1:
+        brightness = original_image[:, :, 0]
+    else:
+        clab_img = skimage.color.rgb2lab(original_image)
+        brightness = clab_img[:, :, 0] / 100
 
     target_image = np.zeros((original_image.shape[0], original_image.shape[1], 0))
     xs = np.arange(original_image.shape[0])
@@ -49,16 +52,16 @@ def create_sin_target(original_image):
     for l in [1, 2, 3]:
         for zz in [xx, yy]:
             for _ in range(1):
-                offset = np.random.uniform(0,2*np.pi)
+                offset = np.random.uniform(0, 2 * np.pi)
                 encodings.append(np.sin(2 ** l * np.pi * zz + offset))
                 encodings.append(np.sin(2 ** l * np.pi * zz + offset + np.pi))
-                offset = np.random.uniform(0,2*np.pi)
+                offset = np.random.uniform(0, 2 * np.pi)
                 encodings.append(np.cos(2 ** l * np.pi * zz + offset))
                 encodings.append(np.cos(2 ** l * np.pi * zz + offset + np.pi))
     encodings = [encoding for encoding in encodings if np.any(encoding > 0.001)]
     for encoding in encodings:
         encoding = 0.5 * encoding + 0.5
-        new_channel = encoding * clab_img[:, :, 0]
+        new_channel = encoding * brightness
         target_image = np.concatenate((target_image, new_channel[:, :, None]), axis=2)
     target_image = np.concatenate((target_image, original_image), axis=2)
     return target_image
